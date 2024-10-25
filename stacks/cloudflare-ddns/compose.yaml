@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  cloudflare-ddns:
+    restart: unless-stopped
+    image: oznu/cloudflare-ddns
+    environment:
+      - ZONE=scaasic.com
+      - API_KEY=${CLOUDFLARE_API_KEY}
+networks: {}

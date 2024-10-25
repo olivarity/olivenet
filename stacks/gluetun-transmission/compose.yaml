@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  gluetun:
+    image: qmcgaw/gluetun:v3.39.1
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8000:8000 # Control server
+      - 9091:9091 # Transmission UI
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - PORT_FORWARD_ONLY=on
+      - VPN_PORT_FORWARDING=on
+      - SERVER_CITIES=Chicago
+    restart: unless-stopped
+  transmission:
+    image: linuxserver/transmission:4.0.6
+    environment:
+      - USER=olivarity
+      - PASS=${TRANSMISSION_PASSWORD}
+      #PEERPORT: # this is what we do here, so skip it.
+    volumes:
+      - /mnt/olivenet/docker/data/transmission:/config
+      - /mnt/olivenet/docker/data/downloads:/downloads
+    network_mode: service:gluetun # go through gluetun's VPN
+    restart: unless-stopped
+    depends_on:
+      - gluetun
+  gluetrans:
+    image: miklosbagi/gluetrans:v0.3.2
+    environment:
+      - GLUETUN_CONTROL_ENDPOINT=http://localhost:8000
+      - GLUETUN_HEALTH_ENDPOINT=http://localhost:9999
+      - TRANSMISSION_ENDPOINT=http://localhost:9091/transmission/rpc
+      - TRANSMISSION_USER=olivarity
+      - TRANSMISSION_PASS=${TRANSMISSION_PASSWORD}
+    network_mode: service:gluetun # go through gluetun's VPN
+    depends_on:
+      - gluetun
+
